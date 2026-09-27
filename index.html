@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestor de Lavandarias</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">GL</div>
+        <div>
+          <strong>GESTOR DE<br>LAVANDARIAS</strong>
+          <span>Painel de gestão</span>
+        </div>
+      </div>
+
+      <div class="sidebar-label">MENU PRINCIPAL</div>
+      <nav class="nav">
+        <button class="nav-item active" data-page="dashboard"><span>⌂</span>Dashboard</button>
+        <button class="nav-item" data-page="faturacao"><span>▣</span>Faturação</button>
+        <button class="nav-item" data-page="despesas"><span>◫</span>Despesas</button>
+        <button class="nav-item" data-page="maquinas"><span>▤</span>Máquinas</button>
+        <button class="nav-item" data-page="manutencao"><span>⌁</span>Manutenção</button>
+        <button class="nav-item" data-page="contactos"><span>♧</span>Contactos</button>
+      </nav>
+
+      <div class="sidebar-label lower">GESTÃO</div>
+      <nav class="nav">
+        <button class="nav-item" data-page="relatorios"><span>▥</span>Relatórios</button>
+        <button class="nav-item" data-page="definicoes"><span>⚙</span>Definições</button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="theme-row">
+          <span>☀</span>
+          <span>Modo claro</span>
+          <button id="themeToggle" aria-label="Alternar tema"><i></i></button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="search"><span>⌕</span><input placeholder="Pesquisar clientes, faturas, máquinas..."></div>
+        <div class="top-actions">
+          <button class="icon-btn" aria-label="Notificações">♧<b></b></button>
+          <div class="profile">
+            <div class="avatar">A</div>
+            <div><strong>Admin</strong><small>Gestor</small></div>
+            <span>⌄</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+        <section class="page active" id="dashboard">
+          <div class="hero">
+            <div>
+              <p class="eyebrow">LAVANDARIA CENTRAL BRAGA</p>
+              <h1>Bem-vindo, Admin <span>👋</span></h1>
+              <p class="hero-sub">Aqui tens uma visão geral da tua lavandaria.</p>
+              <div class="date">▣ &nbsp; Domingo, 27 de Setembro de 2026</div>
+            </div>
+            <div class="hero-decoration"><span>GESTÃO</span><strong>simples.<br>clara.<br>eficiente.</strong></div>
+          </div>
+
+          <div class="stats">
+            <article class="stat-card blue">
+              <div class="stat-icon">▣</div>
+              <div><span>Faturação <em>(Este mês)</em></span><strong>1.250,00 €</strong><small class="up">↗ +12%</small></div>
+              <div class="mini-bars"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </article>
+            <article class="stat-card pink">
+              <div class="stat-icon">◫</div>
+              <div><span>Despesas <em>(Este mês)</em></span><strong>320,00 €</strong><small class="down">↘ -8%</small></div>
+              <div class="mini-bars"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </article>
+            <article class="stat-card green">
+              <div class="stat-icon">▤</div>
+              <div><span>Máquinas ativas</span><strong>8 / 10</strong><small>2 em manutenção</small></div>
+              <div class="ring"><span>80%</span></div>
+            </article>
+            <article class="stat-card purple">
+              <div class="stat-icon">♧</div>
+              <div><span>Utilizações</span><strong>1.284</strong><small>Este mês</small></div>
+              <div class="mini-bars"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </article>
+          </div>
+
+          <div class="grid-two">
+            <article class="panel chart-panel">
+              <div class="panel-head"><div><h2>Faturação vs Despesas</h2><p>Últimos 8 meses</p></div><div class="legend"><span><i class="blue-dot"></i>Faturação</span><span><i class="pink-dot"></i>Despesas</span></div></div>
+              <div class="chart">
+                <div class="y"><span>2.000 €</span><span>1.500 €</span><span>1.000 €</span><span>500 €</span><span>0 €</span></div>
+                <div class="bars">
+                  <div><i style="height:32%"></i><b style="height:12%"></b><small>Jan</small></div>
+                  <div><i style="height:43%"></i><b style="height:15%"></b><small>Fev</small></div>
+                  <div><i style="height:56%"></i><b style="height:18%"></b><small>Mar</small></div>
+                  <div><i style="height:59%"></i><b style="height:19%"></b><small>Abr</small></div>
+                  <div><i style="height:57%"></i><b style="height:20%"></b><small>Mai</small></div>
+                  <div><i style="height:65%"></i><b style="height:22%"></b><small>Jun</small></div>
+                  <div><i style="height:75%"></i><b style="height:29%"></b><small>Jul</small></div>
+                  <div><i style="height:86%"></i><b style="height:31%"></b><small>Ago</small></div>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head"><div><h2>Máquinas</h2><p>Estado atual</p></div><button class="link" data-page-link="maquinas">Ver todas →</button></div>
+              <div class="machine-list">
+                <div><span class="machine-icon">▤</span><strong>Máquina 1</strong><span class="ok">● Em funcionamento</span><time>2h 15m</time></div>
+                <div><span class="machine-icon">▤</span><strong>Máquina 2</strong><span class="ok">● Em funcionamento</span><time>1h 40m</time></div>
+                <div><span class="machine-icon">▤</span><strong>Máquina 3</strong><span class="bad">● Em manutenção</span><time>—</time></div>
+                <div><span class="machine-icon">▤</span><strong>Máquina 4</strong><span class="ok">● Em funcionamento</span><time>45m</time></div>
+              </div>
+            </article>
+          </div>
+
+          <div class="grid-two lower-grid">
+            <article class="panel">
+              <div class="panel-head"><div><h2>Última faturação</h2><p>Registos mais recentes</p></div><button class="link" data-page-link="faturacao">Ver todos →</button></div>
+              <div class="table">
+                <div class="tr th"><span>Data</span><span>Valor</span><span>Estado</span></div>
+                <div class="tr"><span>27/09/2026</span><strong>135,20 €</strong><span class="pill green">Registada</span></div>
+                <div class="tr"><span>26/09/2026</span><strong>118,50 €</strong><span class="pill green">Registada</span></div>
+                <div class="tr"><span>25/09/2026</span><strong>142,00 €</strong><span class="pill green">Registada</span></div>
+                <div class="tr"><span>24/09/2026</span><strong>98,00 €</strong><span class="pill yellow">Corrigir</span></div>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head"><div><h2>Próximas manutenções</h2><p>Manutenções pendentes</p></div><button class="link" data-page-link="manutencao">Ver todas →</button></div>
+              <div class="maintenance">
+                <div><span class="wrench">⌁</span><strong>Máquina 3</strong><span>Manutenção</span><time>Hoje</time><b class="urgent">Urgente</b></div>
+                <div><span class="wrench">⌁</span><strong>Máquina 5</strong><span>Verificação</span><time>02/10</time><b class="attention">Atenção</b></div>
+                <div><span class="wrench">⌁</span><strong>Máquina 8</strong><span>Limpeza filtros</span><time>10/10</time><b class="scheduled">Agendado</b></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="page" id="faturacao"><div class="simple-page"><p class="eyebrow">GESTÃO FINANCEIRA</p><h1>Faturação</h1><p>Registo manual diário, com edição por dia, mês e ano.</p><div class="placeholder-card"><strong>Faturação</strong><span>Aqui entraremos com a tabela, edição e criação dos registos.</span></div></div></section>
+        <section class="page" id="despesas"><div class="simple-page"><p class="eyebrow">GESTÃO FINANCEIRA</p><h1>Despesas</h1><p>Categorias configuradas pelo administrador.</p><div class="placeholder-card"><strong>Despesas</strong><span>As categorias serão definidas no painel Admin.</span></div></div></section>
+        <section class="page" id="maquinas"><div class="simple-page"><p class="eyebrow">CONTROLO OPERACIONAL</p><h1>Máquinas</h1><p>Contagem de utilizações sem interferir com a faturação.</p><div class="placeholder-card"><strong>Máquinas</strong><span>Vamos criar aqui a gestão completa das máquinas.</span></div></div></section>
+        <section class="page" id="manutencao"><div class="simple-page"><p class="eyebrow">CONTROLO OPERACIONAL</p><h1>Manutenção</h1><p>Histórico e ocorrências associadas a cada máquina.</p><div class="placeholder-card"><strong>Manutenção</strong><span>Vamos criar aqui o histórico, estados, técnicos e custos.</span></div></div></section>
+        <section class="page" id="contactos"><div class="simple-page"><p class="eyebrow">CONTACTOS</p><h1>Contactos</h1><p>Contactos definidos exclusivamente pelo administrador.</p><div class="placeholder-card"><strong>Contactos</strong><span>Manutenção, fornecedores, contabilidade e outros contactos.</span></div></div></section>
+        <section class="page" id="relatorios"><div class="simple-page"><p class="eyebrow">ANÁLISE</p><h1>Relatórios</h1><p>Consultas mensais e anuais.</p><div class="placeholder-card"><strong>Relatórios</strong><span>Vamos construir os relatórios depois da base financeira.</span></div></section>
+        <section class="page" id="definicoes"><div class="simple-page"><p class="eyebrow">CONFIGURAÇÃO</p><h1>Definições</h1><p>Preferências e configurações da aplicação.</p><div class="placeholder-card"><strong>Definições</strong><span>O painel Admin será desenvolvido numa fase seguinte.</span></div></section>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
