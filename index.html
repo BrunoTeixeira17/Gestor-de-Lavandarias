@@ -1,157 +1,81 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-PT">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestor de Lavandarias</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gestor de Lavandarias</title>
+<style>
+*{box-sizing:border-box} :root{--bg:#f4f8fc;--card:#fff;--text:#122039;--muted:#71819a;--line:#e5ebf3;--nav:#081a2d;--nav2:#173c64;--blue:#2d8dea;--green:#20b477;--red:#ed627b;--orange:#f4a51c;--purple:#7357e8;--shadow:0 8px 28px rgba(24,48,78,.07)}
+[data-theme=dark]{--bg:#0d141c;--card:#151e28;--text:#f5f8fc;--muted:#9ba8b8;--line:#293541;--nav:#07111d;--nav2:#183653;--shadow:0 8px 28px rgba(0,0,0,.25)}
+body{margin:0;background:var(--bg);color:var(--text);font:14px Inter,system-ui,-apple-system,"Segoe UI",sans-serif}.app{min-height:100vh}.side{position:fixed;left:0;top:0;bottom:0;width:260px;background:var(--nav);color:#fff;padding:26px 15px;display:flex;flex-direction:column}.brand{display:flex;gap:12px;align-items:center;padding:0 15px 38px}.brand strong{font-size:17px;letter-spacing:.05em;line-height:1.05}.nav{display:grid;gap:5px}.nav button{border:0;background:none;color:#bdcad8;text-align:left;padding:12px 15px;border-radius:9px;display:flex;gap:14px;align-items:center;font-size:15px;cursor:pointer}.nav button span{width:20px;text-align:center;font-size:20px}.nav button:hover,.nav button.active{background:var(--nav2);color:#fff}.nav button.active{box-shadow:inset 3px 0 #4aa8ff}.side-bottom{margin-top:auto;border-top:1px solid #24364a;padding:20px 12px;display:flex;align-items:center;color:#b6c4d2}.toggle{margin-left:auto;width:52px;height:28px;border:0;border-radius:20px;background:#31506e;padding:4px;cursor:pointer}.toggle i{display:block;width:20px;height:20px;background:#fff;border-radius:50%}.main{margin-left:260px}.top{height:78px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 30px;gap:35px;position:sticky;top:0;z-index:5}.lav{font-size:28px;font-weight:750;letter-spacing:-.04em;white-space:nowrap}.lav span{font-size:18px;color:var(--muted);margin-left:8px}.search{height:43px;max-width:500px;flex:1;margin-left:auto;background:#f4f7fb;border:1px solid var(--line);border-radius:11px;display:flex;align-items:center;padding:0 15px;color:var(--muted);gap:10px}.search input{width:100%;border:0;outline:0;background:none;color:var(--text);font-size:14px}.bell{font-size:22px;color:var(--muted);position:relative}.bell:after{content:"";position:absolute;width:7px;height:7px;background:#f33d56;border-radius:50%;right:-1px;top:0}.profile{display:flex;align-items:center;gap:10px}.avatar{width:39px;height:39px;border-radius:50%;background:#182c43;color:#fff;display:grid;place-items:center;font-weight:800}.profile b,.profile small{display:block}.profile b{font-size:13px}.profile small{font-size:10px;color:var(--muted)}.content{padding:28px 27px;max-width:1550px;margin:auto}.page{display:none}.page.active{display:block}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:17px;margin-bottom:20px}.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 17px;min-height:130px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px}.icon{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;font-size:22px;flex:none}.i-blue{background:#e1f1ff;color:#2587e8}.i-red{background:#ffe3e8;color:#e95d76}.i-green{background:#dcf8ec;color:#17a66e}.i-purple{background:#ebe5ff;color:#7052df}.stat label{display:block;font-size:12px;color:var(--text)}.stat label small{font-size:10px;color:var(--muted)}.stat strong{display:block;font-size:25px;margin:5px 0;letter-spacing:-.03em}.change{font-size:11px;color:#19a66d}.chartmini{margin-left:auto;display:flex;align-items:end;gap:3px;height:48px}.chartmini i{width:6px;background:#acd5fa;border-radius:4px 4px 0 0}.chartmini i:nth-child(1){height:15px}.chartmini i:nth-child(2){height:23px}.chartmini i:nth-child(3){height:29px}.chartmini i:nth-child(4){height:36px}.chartmini i:nth-child(5){height:43px}.donut{margin-left:auto;width:58px;height:58px;border-radius:50%;background:conic-gradient(#2b8dea 0 80%,#e6edf5 80%);display:grid;place-items:center;position:relative}.donut:after{content:"";width:42px;height:42px;border-radius:50%;background:var(--card);position:absolute}.donut b{z-index:1;font-size:11px}.row2{display:grid;grid-template-columns:1.45fr 1fr;gap:18px;margin-bottom:19px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:20px}.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.head h2{margin:0;font-size:17px}.head p{margin:4px 0 0;color:var(--muted);font-size:11px}.link{border:0;background:none;color:#2587e8;cursor:pointer;font-size:11px}.legend{font-size:10px;color:var(--muted);display:flex;gap:13px}.dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}.db{background:#2e8fea}.dr{background:#ee6b82}.chart{height:285px;display:flex}.axis{width:58px;display:flex;flex-direction:column;justify-content:space-between;padding:7px 0 30px;font-size:10px;color:var(--muted)}.bars{flex:1;display:flex;align-items:end;justify-content:space-around;border-left:1px solid var(--line);border-bottom:1px solid var(--line);background:repeating-linear-gradient(to bottom,transparent 0,transparent 56px,var(--line) 57px)}.bar{height:100%;flex:1;display:flex;justify-content:center;align-items:end;gap:4px;position:relative}.bar i,.bar b{display:block;width:21px;border-radius:4px 4px 0 0}.bar i{background:#318fe9}.bar b{background:#ef7187}.bar em{position:absolute;bottom:-24px;font-style:normal;color:var(--muted);font-size:10px}.machine-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.machine-box{border:1px solid var(--line);border-radius:12px;padding:9px;text-align:center;min-height:108px;position:relative}.machine-box .washer{font-size:43px;line-height:1;margin:2px 0 5px;filter:grayscale(.15)}.machine-box strong{font-size:11px}.machine-status{display:flex;align-items:center;justify-content:center;gap:5px;font-size:9px;color:var(--muted);margin-top:4px}.machine-status i{width:8px;height:8px;border-radius:50%;display:block}.green-dot{background:#18b276}.red-dot{background:#ef4659}.gray-dot{background:#8d9aaa}.orange-dot{background:#f5a719}.table-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}.table-head h2{margin:0;font-size:17px}.table{width:100%}.tr{display:grid;grid-template-columns:1.2fr 1.25fr .9fr .8fr .75fr;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line);font-size:11px}.tr:last-child{border:0}.th{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.06em}.pill{justify-self:start;padding:6px 10px;border-radius:20px;font-size:9px}.paid{background:#ddf8eb;color:#169c66}.pending{background:#fff0cb;color:#9b6c00}.maint-row{display:grid;grid-template-columns:1fr 1.3fr .9fr .7fr;align-items:center;padding:13px 0;border-bottom:1px solid var(--line);font-size:11px}.maint-row:last-child{border:0}.tag{justify-self:start;border-radius:20px;padding:6px 10px;font-size:9px}.urgent{background:#ffe0e5;color:#d84f65}.attention{background:#fff0ca;color:#966700}.scheduled{background:#ddecff;color:#2879bc}.simple h1{font-size:31px;margin:0}.simple>p{color:var(--muted)}.placeholder{margin-top:22px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:30px}.placeholder b,.placeholder span{display:block}.placeholder span{color:var(--muted);margin-top:7px;font-size:12px}
+@media(max-width:1150px){.stats{grid-template-columns:repeat(2,1fr)}.row2{grid-template-columns:1fr}}@media(max-width:760px){.side{position:static;width:100%;padding:14px}.side-bottom{display:none}.nav{display:flex;overflow:auto}.nav button{white-space:nowrap}.main{margin:0}.top{padding:0 14px;gap:10px}.lav{font-size:20px}.search{display:none}.profile small,.profile b{display:none}.content{padding:16px 12px}.stats{grid-template-columns:1fr}.machine-grid{grid-template-columns:repeat(3,1fr)}.row2{grid-template-columns:1fr}.tr{grid-template-columns:1fr 1fr .8fr}.tr span:nth-child(2),.tr span:nth-child(3){display:none}.maint-row{grid-template-columns:1fr 1fr .8fr}.maint-row span:nth-child(2){display:none}}
+</style>
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark">GL</div>
-        <div>
-          <strong>GESTOR DE<br>LAVANDARIAS</strong>
-          <span>Painel de gestão</span>
-        </div>
-      </div>
-
-      <div class="sidebar-label">MENU PRINCIPAL</div>
-      <nav class="nav">
-        <button class="nav-item active" data-page="dashboard"><span>⌂</span>Dashboard</button>
-        <button class="nav-item" data-page="faturacao"><span>▣</span>Faturação</button>
-        <button class="nav-item" data-page="despesas"><span>◫</span>Despesas</button>
-        <button class="nav-item" data-page="maquinas"><span>▤</span>Máquinas</button>
-        <button class="nav-item" data-page="manutencao"><span>⌁</span>Manutenção</button>
-        <button class="nav-item" data-page="contactos"><span>♧</span>Contactos</button>
-      </nav>
-
-      <div class="sidebar-label lower">GESTÃO</div>
-      <nav class="nav">
-        <button class="nav-item" data-page="relatorios"><span>▥</span>Relatórios</button>
-        <button class="nav-item" data-page="definicoes"><span>⚙</span>Definições</button>
-      </nav>
-
-      <div class="sidebar-bottom">
-        <div class="theme-row">
-          <span>☀</span>
-          <span>Modo claro</span>
-          <button id="themeToggle" aria-label="Alternar tema"><i></i></button>
-        </div>
-      </div>
-    </aside>
-
-    <main class="main">
-      <header class="topbar">
-        <div class="search"><span>⌕</span><input placeholder="Pesquisar clientes, faturas, máquinas..."></div>
-        <div class="top-actions">
-          <button class="icon-btn" aria-label="Notificações">♧<b></b></button>
-          <div class="profile">
-            <div class="avatar">A</div>
-            <div><strong>Admin</strong><small>Gestor</small></div>
-            <span>⌄</span>
-          </div>
-        </div>
-      </header>
-
-      <div class="content">
-        <section class="page active" id="dashboard">
-          <div class="hero">
-            <div>
-              <p class="eyebrow">LAVANDARIA CENTRAL BRAGA</p>
-              <h1>Bem-vindo, Admin <span>👋</span></h1>
-              <p class="hero-sub">Aqui tens uma visão geral da tua lavandaria.</p>
-              <div class="date">▣ &nbsp; Domingo, 27 de Setembro de 2026</div>
-            </div>
-            <div class="hero-decoration"><span>GESTÃO</span><strong>simples.<br>clara.<br>eficiente.</strong></div>
-          </div>
-
-          <div class="stats">
-            <article class="stat-card blue">
-              <div class="stat-icon">▣</div>
-              <div><span>Faturação <em>(Este mês)</em></span><strong>1.250,00 €</strong><small class="up">↗ +12%</small></div>
-              <div class="mini-bars"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-            </article>
-            <article class="stat-card pink">
-              <div class="stat-icon">◫</div>
-              <div><span>Despesas <em>(Este mês)</em></span><strong>320,00 €</strong><small class="down">↘ -8%</small></div>
-              <div class="mini-bars"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-            </article>
-            <article class="stat-card green">
-              <div class="stat-icon">▤</div>
-              <div><span>Máquinas ativas</span><strong>8 / 10</strong><small>2 em manutenção</small></div>
-              <div class="ring"><span>80%</span></div>
-            </article>
-            <article class="stat-card purple">
-              <div class="stat-icon">♧</div>
-              <div><span>Utilizações</span><strong>1.284</strong><small>Este mês</small></div>
-              <div class="mini-bars"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-            </article>
-          </div>
-
-          <div class="grid-two">
-            <article class="panel chart-panel">
-              <div class="panel-head"><div><h2>Faturação vs Despesas</h2><p>Últimos 8 meses</p></div><div class="legend"><span><i class="blue-dot"></i>Faturação</span><span><i class="pink-dot"></i>Despesas</span></div></div>
-              <div class="chart">
-                <div class="y"><span>2.000 €</span><span>1.500 €</span><span>1.000 €</span><span>500 €</span><span>0 €</span></div>
-                <div class="bars">
-                  <div><i style="height:32%"></i><b style="height:12%"></b><small>Jan</small></div>
-                  <div><i style="height:43%"></i><b style="height:15%"></b><small>Fev</small></div>
-                  <div><i style="height:56%"></i><b style="height:18%"></b><small>Mar</small></div>
-                  <div><i style="height:59%"></i><b style="height:19%"></b><small>Abr</small></div>
-                  <div><i style="height:57%"></i><b style="height:20%"></b><small>Mai</small></div>
-                  <div><i style="height:65%"></i><b style="height:22%"></b><small>Jun</small></div>
-                  <div><i style="height:75%"></i><b style="height:29%"></b><small>Jul</small></div>
-                  <div><i style="height:86%"></i><b style="height:31%"></b><small>Ago</small></div>
-                </div>
-              </div>
-            </article>
-
-            <article class="panel">
-              <div class="panel-head"><div><h2>Máquinas</h2><p>Estado atual</p></div><button class="link" data-page-link="maquinas">Ver todas →</button></div>
-              <div class="machine-list">
-                <div><span class="machine-icon">▤</span><strong>Máquina 1</strong><span class="ok">● Em funcionamento</span><time>2h 15m</time></div>
-                <div><span class="machine-icon">▤</span><strong>Máquina 2</strong><span class="ok">● Em funcionamento</span><time>1h 40m</time></div>
-                <div><span class="machine-icon">▤</span><strong>Máquina 3</strong><span class="bad">● Em manutenção</span><time>—</time></div>
-                <div><span class="machine-icon">▤</span><strong>Máquina 4</strong><span class="ok">● Em funcionamento</span><time>45m</time></div>
-              </div>
-            </article>
-          </div>
-
-          <div class="grid-two lower-grid">
-            <article class="panel">
-              <div class="panel-head"><div><h2>Última faturação</h2><p>Registos mais recentes</p></div><button class="link" data-page-link="faturacao">Ver todos →</button></div>
-              <div class="table">
-                <div class="tr th"><span>Data</span><span>Valor</span><span>Estado</span></div>
-                <div class="tr"><span>27/09/2026</span><strong>135,20 €</strong><span class="pill green">Registada</span></div>
-                <div class="tr"><span>26/09/2026</span><strong>118,50 €</strong><span class="pill green">Registada</span></div>
-                <div class="tr"><span>25/09/2026</span><strong>142,00 €</strong><span class="pill green">Registada</span></div>
-                <div class="tr"><span>24/09/2026</span><strong>98,00 €</strong><span class="pill yellow">Corrigir</span></div>
-              </div>
-            </article>
-
-            <article class="panel">
-              <div class="panel-head"><div><h2>Próximas manutenções</h2><p>Manutenções pendentes</p></div><button class="link" data-page-link="manutencao">Ver todas →</button></div>
-              <div class="maintenance">
-                <div><span class="wrench">⌁</span><strong>Máquina 3</strong><span>Manutenção</span><time>Hoje</time><b class="urgent">Urgente</b></div>
-                <div><span class="wrench">⌁</span><strong>Máquina 5</strong><span>Verificação</span><time>02/10</time><b class="attention">Atenção</b></div>
-                <div><span class="wrench">⌁</span><strong>Máquina 8</strong><span>Limpeza filtros</span><time>10/10</time><b class="scheduled">Agendado</b></div>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section class="page" id="faturacao"><div class="simple-page"><p class="eyebrow">GESTÃO FINANCEIRA</p><h1>Faturação</h1><p>Registo manual diário, com edição por dia, mês e ano.</p><div class="placeholder-card"><strong>Faturação</strong><span>Aqui entraremos com a tabela, edição e criação dos registos.</span></div></div></section>
-        <section class="page" id="despesas"><div class="simple-page"><p class="eyebrow">GESTÃO FINANCEIRA</p><h1>Despesas</h1><p>Categorias configuradas pelo administrador.</p><div class="placeholder-card"><strong>Despesas</strong><span>As categorias serão definidas no painel Admin.</span></div></div></section>
-        <section class="page" id="maquinas"><div class="simple-page"><p class="eyebrow">CONTROLO OPERACIONAL</p><h1>Máquinas</h1><p>Contagem de utilizações sem interferir com a faturação.</p><div class="placeholder-card"><strong>Máquinas</strong><span>Vamos criar aqui a gestão completa das máquinas.</span></div></div></section>
-        <section class="page" id="manutencao"><div class="simple-page"><p class="eyebrow">CONTROLO OPERACIONAL</p><h1>Manutenção</h1><p>Histórico e ocorrências associadas a cada máquina.</p><div class="placeholder-card"><strong>Manutenção</strong><span>Vamos criar aqui o histórico, estados, técnicos e custos.</span></div></div></section>
-        <section class="page" id="contactos"><div class="simple-page"><p class="eyebrow">CONTACTOS</p><h1>Contactos</h1><p>Contactos definidos exclusivamente pelo administrador.</p><div class="placeholder-card"><strong>Contactos</strong><span>Manutenção, fornecedores, contabilidade e outros contactos.</span></div></div></section>
-        <section class="page" id="relatorios"><div class="simple-page"><p class="eyebrow">ANÁLISE</p><h1>Relatórios</h1><p>Consultas mensais e anuais.</p><div class="placeholder-card"><strong>Relatórios</strong><span>Vamos construir os relatórios depois da base financeira.</span></div></section>
-        <section class="page" id="definicoes"><div class="simple-page"><p class="eyebrow">CONFIGURAÇÃO</p><h1>Definições</h1><p>Preferências e configurações da aplicação.</p><div class="placeholder-card"><strong>Definições</strong><span>O painel Admin será desenvolvido numa fase seguinte.</span></div></section>
-      </div>
-    </main>
-  </div>
-  <script src="app.js"></script>
+<div class="app">
+<aside class="side">
+<div class="brand"><strong>GESTOR DE<br>LAVANDARIAS</strong></div>
+<nav class="nav">
+<button class="active" data-go="dashboard"><span>⌂</span>Dashboard</button>
+<button data-go="faturacao"><span>▣</span>Faturação</button>
+<button data-go="despesas"><span>♙</span>Despesas</button>
+<button data-go="maquinas"><span>▣</span>Máquinas</button>
+<button data-go="manutencao"><span>⌁</span>Manutenção</button>
+<button data-go="contactos"><span>♧</span>Contactos</button>
+<button data-go="clientes"><span>♙</span>Clientes</button>
+<button data-go="lavandarias"><span>▦</span>Lavandarias</button>
+<button data-go="relatorios"><span>▥</span>Relatórios</button>
+<button data-go="definicoes"><span>⚙</span>Definições</button>
+</nav>
+<div class="side-bottom">☼ <span style="margin-left:9px">Modo Escuro</span><button class="toggle" id="theme"><i></i></button></div>
+</aside>
+<main class="main">
+<header class="top"><div class="lav">Lavandaria Central <span>⌄</span></div><div class="search">⌕ <input placeholder="Pesquisar clientes, faturas, máquinas..."></div><div class="bell">♧</div><div class="profile"><div class="avatar">A</div><div><b>Admin</b><small>Gestor</small></div><span>⌄</span></div></header>
+<div class="content">
+<section id="dashboard" class="page active">
+<div class="stats">
+<div class="stat"><div class="icon i-blue">▤</div><div><label>Faturação <small>(Este mês)</small></label><strong>1 250,00 €</strong><span class="change">↗ +12%</span></div><div class="chartmini"><i></i><i></i><i></i><i></i><i></i></div></div>
+<div class="stat"><div class="icon i-red">◉</div><div><label>Despesas <small>(Este mês)</small></label><strong>320,00 €</strong><span style="font-size:11px;color:#ef657c">↗ +8%</span></div><div class="chartmini"><i style="background:#f6bdc8"></i><i style="background:#f6bdc8"></i><i style="background:#f6bdc8"></i><i style="background:#f6bdc8"></i><i style="background:#f6bdc8"></i></div></div>
+<div class="stat"><div class="icon i-green">♙</div><div><label>Total de Clientes</label><strong>124</strong><span class="change">↗ +6%</span></div><div class="chartmini"><i style="background:#9de7ca"></i><i style="background:#9de7ca"></i><i style="background:#9de7ca"></i><i style="background:#9de7ca"></i><i style="background:#9de7ca"></i></div></div>
+<div class="stat"><div class="icon i-purple">▣</div><div><label>Máquinas</label><strong>8 / 10</strong></div><div class="donut"><b>80%</b></div></div>
+</div>
+<div class="row2">
+<article class="card"><div class="head"><div><h2>Faturação vs Despesas</h2></div><div class="legend"><span><i class="dot db"></i>Faturação</span><span><i class="dot dr"></i>Despesas</span><select style="border:1px solid var(--line);border-radius:7px;padding:5px;background:var(--card);color:var(--text);font-size:10px"><option>Últimos 6 meses</option></select></div></div><div class="chart"><div class="axis"><span>2 000 €</span><span>1 500 €</span><span>1 000 €</span><span>500 €</span><span>0 €</span></div><div class="bars"><div class="bar"><i style="height:40%"></i><b style="height:18%"></b><em>Jan</em></div><div class="bar"><i style="height:55%"></i><b style="height:22%"></b><em>Fev</em></div><div class="bar"><i style="height:63%"></i><b style="height:23%"></b><em>Mar</em></div><div class="bar"><i style="height:70%"></i><b style="height:27%"></b><em>Abr</em></div><div class="bar"><i style="height:78%"></i><b style="height:31%"></b><em>Mai</em></div><div class="bar"><i style="height:88%"></i><b style="height:35%"></b><em>Jun</em></div></div></div></article>
+<article class="card"><div class="head"><div><h2>Máquinas</h2></div><button class="link" data-go="maquinas">Ver todas →</button></div><div class="machine-grid">
+<div class="machine-box"><div class="washer">◉</div><strong>Máquina 1</strong><div class="machine-status"><i class="green-dot"></i>Disponível</div></div>
+<div class="machine-box"><div class="washer">◉</div><strong>Máquina 2</strong><div class="machine-status"><i class="green-dot"></i>Disponível</div></div>
+<div class="machine-box"><div class="washer">◉</div><strong>Máquina 3</strong><div class="machine-status"><i class="red-dot"></i>Manutenção</div></div>
+<div class="machine-box"><div class="washer">◉</div><strong>Máquina 4</strong><div class="machine-status"><i class="gray-dot"></i>Desligada</div></div>
+<div class="machine-box"><div class="washer">◉</div><strong>Máquina 5</strong><div class="machine-status"><i class="orange-dot"></i>Reservada</div></div>
+<div class="machine-box"><div class="washer">◉</div><strong>Máquina 6</strong><div class="machine-status"><i class="green-dot"></i>Disponível</div></div>
+<div class="machine-box"><div class="washer">◉</div><strong>Máquina 7</strong><div class="machine-status"><i class="gray-dot"></i>Desligada</div></div>
+<div class="machine-box"><div class="washer">◉</div><strong>Máquina 8</strong><div class="machine-status"><i class="green-dot"></i>Disponível</div></div>
+<div class="machine-box"><div class="washer">◉</div><strong>Máquina 9</strong><div class="machine-status"><i class="green-dot"></i>Disponível</div></div>
+</div></article>
+</div>
+<div class="row2">
+<article class="card"><div class="table-head"><h2>Últimas Faturas</h2><button class="link" data-go="faturacao">Ver todas →</button></div><div class="table"><div class="tr th"><span>Nº Fatura</span><span>Cliente</span><span>Data</span><span>Valor</span><span>Estado</span></div><div class="tr"><span>2025-0087</span><span>Maria Silva</span><span>27/08/2025</span><b>25,00 €</b><span class="pill paid">Paga</span></div><div class="tr"><span>2025-0086</span><span>João Ferreira</span><span>26/08/2025</span><b>18,50 €</b><span class="pill paid">Paga</span></div><div class="tr"><span>2025-0085</span><span>Ana Costa</span><span>26/08/2025</span><b>32,00 €</b><span class="pill paid">Paga</span></div><div class="tr"><span>2025-0084</span><span>Carlos Mendes</span><span>25/08/2025</span><b>15,00 €</b><span class="pill pending">Pendente</span></div></div></article>
+<article class="card"><div class="table-head"><h2>Próximas Manutenções</h2><button class="link" data-go="manutencao">Ver todas →</button></div><div><div class="maint-row"><strong>Máquina 3</strong><span>Manutenção preventiva</span><span>30/08/2025</span><span class="tag urgent">Urgente</span></div><div class="maint-row"><strong>Máquina 5</strong><span>Verificação geral</span><span>02/09/2025</span><span class="tag attention">Atenção</span></div><div class="maint-row"><strong>Máquina 8</strong><span>Limpeza de filtros</span><span>10/09/2025</span><span class="tag scheduled">Agendado</span></div><div class="maint-row"><strong>Máquina 2</strong><span>Substituição de peças</span><span>15/09/2025</span><span class="tag scheduled">Agendado</span></div></div></article>
+</div>
+</section>
+<div id="faturacao" class="page simple"><h1>Faturação</h1><p>Registo e edição manual por dia, mês e ano.</p><div class="placeholder"><b>Faturação</b><span>Área pronta para a ligação à base de dados.</span></div></div>
+<div id="despesas" class="page simple"><h1>Despesas</h1><p>Categorias criadas pelo administrador.</p><div class="placeholder"><b>Despesas</b><span>Água, eletricidade, contabilidade e outras despesas.</span></div></div>
+<div id="maquinas" class="page simple"><h1>Máquinas</h1><p>Contagens manuais sem interferência na faturação.</p><div class="placeholder"><b>Máquinas</b><span>Tipos, número de máquinas e contagens diárias.</span></div></div>
+<div id="manutencao" class="page simple"><h1>Manutenção</h1><p>Histórico e intervenções.</p><div class="placeholder"><b>Manutenção</b><span>Fornecedores, intervenções e custos.</span></div></div>
+<div id="contactos" class="page simple"><h1>Contactos</h1><p>Fornecedores e contactos definidos pelo administrador.</p><div class="placeholder"><b>Contactos</b><span>Manutenção, líquidos, contabilidade e outros.</span></div></div>
+<div id="clientes" class="page simple"><h1>Clientes</h1><p>Gestão das contas de acesso.</p><div class="placeholder"><b>Clientes</b><span>O administrador poderá criar, editar e alterar acessos.</span></div></div>
+<div id="lavandarias" class="page simple"><h1>Lavandarias</h1><p>Gestão das lavandarias associadas.</p><div class="placeholder"><b>Lavandarias</b><span>Cada cliente terá o nome da sua lavandaria no topo.</span></div></div>
+<div id="relatorios" class="page simple"><h1>Relatórios</h1><p>Relatórios mensais e anuais.</p><div class="placeholder"><b>Relatórios</b><span>Faturação, despesas e utilizações.</span></div></div>
+<div id="definicoes" class="page simple"><h1>Definições</h1><p>Configuração geral.</p><div class="placeholder"><b>Definições</b><span>Preferências e configurações da aplicação.</span></div></div>
+</div>
+</main>
+</div>
+<script>
+const root=document.documentElement;
+if(localStorage.getItem("gl-theme")==="dark")root.dataset.theme="dark";
+document.getElementById("theme").onclick=()=>{if(root.dataset.theme==="dark"){delete root.dataset.theme;localStorage.setItem("gl-theme","light")}else{root.dataset.theme="dark";localStorage.setItem("gl-theme","dark")}};
+function go(id){document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.go===id));scrollTo(0,0)}
+document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go));
+</script>
 </body>
 </html>
