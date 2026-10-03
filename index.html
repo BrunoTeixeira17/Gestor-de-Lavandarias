@@ -672,10 +672,23 @@ setInterval(()=>{applyAccountExpirations();if(session?.userId&&!isAdmin()&&!curr
 
 /* V13: gestão online de contas via Supabase Auth */
 async function createSupabaseCustomer(email,password,name){
-  const {data:{session:adminSession}}=await supabaseClient.auth.getSession();
-  const {data,error}=await supabaseClient.auth.signUp({email,password,options:{data:{full_name:name}}});
+  // Criar o cliente através de uma instância secundária do Supabase.
+  // Assim a sessão do administrador permanece intacta no navegador.
+  const creatorClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{
+    auth:{
+      persistSession:false,
+      autoRefreshToken:false,
+      detectSessionInUrl:false,
+      storageKey:'gestor-lavandarias-account-creator'
+    }
+  });
+  const {data,error}=await creatorClient.auth.signUp({
+    email,
+    password,
+    options:{data:{full_name:name}}
+  });
+  await creatorClient.auth.signOut();
   if(error) throw error;
-  if(adminSession?.access_token&&adminSession?.refresh_token) await supabaseClient.auth.setSession(adminSession);
   return data.user;
 }
 
@@ -721,7 +734,13 @@ async function openAccountModal(id){
       const {error:sErr}=await supabaseClient.from('subscriptions').upsert({id:uid(),laundry_id:lid,plan_name:String(price),starts_at:startDate,expires_at:expiresAt,days_paid:days,active:status==='active'});if(sErr)throw sErr;
       ['Contabilidade','Água','Eletricidade','Renda','Produtos / Líquidos','Manutenção','Seguro','Internet'].forEach(async n=>{await supabaseClient.from('expense_categories').insert({id:uid(),laundry_id:lid,name:n})});
       await loadRemoteState();selectedLaundryId=lid;closeModal();renderAll();toast('Conta criada online com sucesso.');
-    }catch(err){console.error(err);toast(err?.message?.includes('already registered')?'Esse email já está registado no Supabase.':'Não foi possível criar a conta online.');}
+    }catch(err){
+      console.error('Erro ao criar conta:',err);
+      const msg=String(err?.message||err||'');
+      if(msg.toLowerCase().includes('already registered')) toast('Esse email já está registado no Supabase.');
+      else if(msg.toLowerCase().includes('rate limit')) toast('O Supabase atingiu temporariamente o limite de criação de contas. Tenta novamente daqui a pouco.');
+      else toast('Não foi possível criar a conta online: '+msg);
+    }
   };
 }
 
