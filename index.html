@@ -186,18 +186,27 @@ body{margin:0;background:var(--bg);color:var(--text);font:14px Inter,system-ui,-
 
     <section id="definicoes" class="page simple">
       <div class="head"><div><h1>Definições</h1><p>Configuração geral da conta e configuração individual de cada lavandaria.</p></div></div>
-      <div class="card" style="margin-bottom:18px"><div class="head"><div><h2>Modelo de contas</h2><p>Uma conta de cliente corresponde a uma única lavandaria. A faturação, despesas, categorias, máquinas, manutenções e contactos ficam ligados apenas a essa lavandaria.</p></div></div></div><div class="grid2"><div class="card"><h2 class="section-title">A tua sessão</h2><p class="subtle" style="margin-top:8px">Utilizador: <b id="settingsEmail"></b></p><p class="subtle">Perfil: <b id="settingsRole"></b></p><button class="btn btn-soft" onclick="openPasswordModal()">Alterar palavra-passe</button></div><div class="card"><h2 class="section-title">Dados locais</h2><p class="subtle">Esta V1 guarda os dados no navegador através de armazenamento local.</p><button class="btn btn-danger" onclick="resetData()">Repor dados de demonstração</button></div></div><div class="card" style="margin-top:18px"><div class="head"><div><h2>Categorias de despesas por lavandaria</h2><p>Cada lavandaria tem a sua própria lista. Adicionar uma categoria aqui não altera as outras lavandarias.</p></div></div><div id="settingsLaundryControl" style="margin:4px 0 16px"></div><div class="head" style="margin-bottom:10px"><div><span class="subtle">Categorias da lavandaria selecionada</span></div><button class="btn btn-primary admin-only" onclick="openCategoryModal()">+ Nova categoria</button></div><div id="categoryManager"></div></div>
+      <div class="card" style="margin-bottom:18px"><div class="head"><div><h2>Modelo de contas</h2><p>Uma conta de cliente corresponde a uma única lavandaria. A faturação, despesas, categorias, máquinas, manutenções e contactos ficam ligados apenas a essa lavandaria.</p></div></div></div><div class="grid2"><div class="card"><h2 class="section-title">A tua sessão</h2><p class="subtle" style="margin-top:8px">Utilizador: <b id="settingsEmail"></b></p><p class="subtle">Perfil: <b id="settingsRole"></b></p><button class="btn btn-soft" onclick="openPasswordModal()">Alterar palavra-passe</button></div><div class="card"><h2 class="section-title">Dados online</h2><p class="subtle">Os dados desta versão ficam guardados online no Supabase e associados à conta da lavandaria.</p><button class="btn btn-soft" onclick="reloadOnlineData()">Atualizar dados online</button></div></div><div class="card" style="margin-top:18px"><div class="head"><div><h2>Categorias de despesas por lavandaria</h2><p>Cada lavandaria tem a sua própria lista. Adicionar uma categoria aqui não altera as outras lavandarias.</p></div></div><div id="settingsLaundryControl" style="margin:4px 0 16px"></div><div class="head" style="margin-bottom:10px"><div><span class="subtle">Categorias da lavandaria selecionada</span></div><button class="btn btn-primary admin-only" onclick="openCategoryModal()">+ Nova categoria</button></div><div id="categoryManager"></div></div>
     </section>
   </div>
 </main>
 </div>
 
 <div id="modalRoot"></div><div id="toast" class="toast hidden"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+const SUPABASE_URL='https://jtcmklzqroqyporlmbbd.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_mfHMd6SdGdQk1XDZ5pIpQQ_Fw7RjL1T';
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+if(SUPABASE_PUBLISHABLE_KEY.startsWith('COLE_AQUI')){setTimeout(()=>toast('V13: falta configurar a chave pública do Supabase no código.'),1200)}
+
+let remoteReady=false;
+let remoteSyncTimer=null;
+let remoteSyncing=false;
+let remoteSyncQueued=false;
+
 const ADMIN_EMAIL='brunoteixeira1208@gmail.com';
-const ADMIN_PASSWORD_HASH='866faa572b12aca4f63bfa2a6d14ba2d48e100abc334687e942881a76cd26ffc';
-const STATE_KEY='gestor_lavandarias_state_v1';
-const SESSION_KEY='gestor_lavandarias_session_v1';
+const SESSION_KEY='gestor_lavandarias_session_v2';
 const THEME_KEY='gl-theme';
 
 const euro=n=>new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(Number(n)||0);
@@ -207,27 +216,98 @@ const monthKey=d=>String(d).slice(0,7);
 const yearKey=d=>String(d).slice(0,4);
 const fmtDate=d=>d?new Intl.DateTimeFormat('pt-PT').format(new Date(d+'T00:00:00')):'';
 async function sha256(text){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')}
-function save(){localStorage.setItem(STATE_KEY,JSON.stringify(state))}
-function load(){try{return JSON.parse(localStorage.getItem(STATE_KEY))||null}catch{return null}}
-function seedState(){
- const laundryId=uid();
- const cats=['Contabilidade','Água','Eletricidade','Renda','Produtos / Líquidos','Manutenção','Seguro','Internet'].map(name=>({id:uid(),laundryId,name}));
- const machines=Array.from({length:9},(_,i)=>({id:uid(),laundryId,number:i+1,type:i%4===0?'Lavagem':i%4===1?'Secagem':i%4===2?'Centrifugação':'Outro',status:['Disponível','Disponível','Manutenção','Desligada','Reservada','Disponível','Desligada','Disponível','Disponível'][i],usage:0}));
- const now=new Date();
- const usageRecords=[];
- for(let mi=5;mi>=0;mi--){machines.forEach((m,i)=>{const base=[24,31,18,6,12,28,4,21,16][i];const count=Math.max(0,Math.round(base*(0.72+0.07*(5-mi))));usageRecords.push({id:uid(),laundryId,machineId:m.id,date:new Date(now.getFullYear(),now.getMonth()-mi,12).toISOString().slice(0,10),count});m.usage+=count;});}
- const rev=[]; const exp=[];
- for(let i=0;i<6;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,10);rev.push({id:uid(),laundryId,date:d.toISOString().slice(0,10),amount:[1250,1180,1100,1050,980,920][i],note:'Faturação diária'});}
- exp.push({id:uid(),laundryId,date:today(),amount:320,categoryId:cats.find(c=>c.name==='Eletricidade').id,description:'Despesa de exemplo'});
- const contacts=[
-  {name:'Técnica Lavandarias',category:'Manutenção',phone:'912 000 111',whatsapp:'912 000 111',email:'tecnico@example.com',notes:'Assistência a máquinas'},
-  {name:'Fornecedor de Líquidos',category:'Produtos / Líquidos',phone:'913 000 222',whatsapp:'913 000 222',email:'fornecedor@example.com',notes:'Detergente e amaciador'},
-  {name:'Contabilidade',category:'Contabilidade',phone:'914 000 333',whatsapp:'914 000 333',email:'contabilidade@example.com',notes:''}
- ].map(x=>({...x,id:uid(),laundryId}));
- const maint=machines.slice(0,4).map((m,i)=>({id:uid(),laundryId,machineId:m.id,date:new Date(now.getFullYear(),now.getMonth(),10+i).toISOString().slice(0,10),problem:['Manutenção preventiva','Verificação geral','Limpeza de filtros','Substituição de peça'][i],technician:'Técnica Lavandarias',cost:[95,40,25,110][i],repairDate:'',status:['Pendente','Pendente','Concluída','Pendente'][i],observations:''}));
- return {usageRecords,users:[{id:'admin',role:'admin',name:'Admin',email:ADMIN_EMAIL,status:'active',laundryId:null,passwordHash:ADMIN_PASSWORD_HASH}],laundries:[{id:laundryId,name:'Lavandaria Central',customerId:null,status:'active',monthlyPrice:3}],categories:cats,contacts, machines, maintenance:maint, revenue:rev, expenses:exp};
+
+function emptyState(){return {users:[],laundries:[],categories:[],contacts:[],machines:[],maintenance:[],revenue:[],expenses:[],usageRecords:[]}}
+let state=emptyState();
+
+function dbRowToLaundry(r){return {id:r.id,name:r.name,customerId:null,status:r.status||'active',monthlyPrice:Number(r.monthly_price)||0,paidDays:Number(r.paid_days)||0,expiresAt:r.expires_at||'',activatedAt:r.activated_at||''}}
+function dbRowToUser(r){return {id:r.id,role:r.role||'customer',name:r.full_name||'',email:r.email||'',status:'active',laundryId:r.laundry_id||null}}
+
+async function loadRemoteState(){
+  const [{data:profiles,error:pErr},{data:laundries,error:lErr},{data:subs,error:sErr},{data:machines,error:mErr},{data:revenue,error:rErr},{data:usage,error:uErr},{data:cats,error:cErr},{data:expenses,error:eErr},{data:maintenance,error:mtErr},{data:contacts,error:ctErr}]=await Promise.all([
+    supabaseClient.from('profiles').select('*'),
+    supabaseClient.from('laundries').select('*'),
+    supabaseClient.from('subscriptions').select('*'),
+    supabaseClient.from('machines').select('*'),
+    supabaseClient.from('revenue').select('*'),
+    supabaseClient.from('machine_usage').select('*'),
+    supabaseClient.from('expense_categories').select('*'),
+    supabaseClient.from('expenses').select('*'),
+    supabaseClient.from('maintenance').select('*'),
+    supabaseClient.from('contacts').select('*')
+  ]);
+  const err=[pErr,lErr,sErr,mErr,rErr,uErr,cErr,eErr,mtErr,ctErr].find(Boolean);
+  if(err) throw err;
+  const current=await supabaseClient.auth.getUser();
+  const authUser=current.data?.user;
+  if(!authUser) throw new Error('Sessão não encontrada.');
+  state.laundries=(laundries||[]).map(dbRowToLaundry);
+  const subMap={};(subs||[]).forEach(s=>{if(!subMap[s.laundry_id]||new Date(s.updated_at||0)>new Date(subMap[s.laundry_id].updated_at||0))subMap[s.laundry_id]=s});
+  state.laundries.forEach(l=>{const s=subMap[l.id];if(s){l.paidDays=Number(s.days_paid)||0;l.expiresAt=s.expires_at?String(s.expires_at).slice(0,10):'';l.activatedAt=s.starts_at?String(s.starts_at).slice(0,10):'';l.status=s.active?'active':'suspended';}});
+  const profileRows=profiles||[];
+  state.users=profileRows.map(dbRowToUser);
+  if(!state.users.some(u=>u.id===authUser.id))state.users.push({id:authUser.id,role:authUser.email?.toLowerCase()===ADMIN_EMAIL.toLowerCase()?'admin':'customer',name:authUser.user_metadata?.full_name||authUser.email||'',email:authUser.email||'',status:'active',laundryId:null});
+  state.users.forEach(u=>{const l=state.laundries.find(x=>x.id===u.laundryId);if(l)l.customerId=u.id});
+  state.machines=(machines||[]).map(x=>({id:x.id,laundryId:x.laundry_id,number:Number(x.number),type:x.type||'Outro',status:x.status||(x.active?'Disponível':'Desligada'),usage:0}));
+  state.revenue=(revenue||[]).map(x=>({id:x.id,laundryId:x.laundry_id,date:String(x.revenue_date).slice(0,10),amount:Number(x.amount)||0,note:x.notes||''}));
+  state.usageRecords=(usage||[]).map(x=>({id:x.id,laundryId:x.laundry_id,revenueId:x.revenue_id||null,machineId:x.machine_id,date:String(x.usage_date).slice(0,10),count:Number(x.usage_count)||0}));
+  state.machines.forEach(m=>m.usage=state.usageRecords.filter(r=>r.machineId===m.id).reduce((a,r)=>a+Number(r.count||0),0));
+  state.categories=(cats||[]).map(x=>({id:x.id,laundryId:x.laundry_id,name:x.name}));
+  state.expenses=(expenses||[]).map(x=>({id:x.id,laundryId:x.laundry_id,date:String(x.expense_date).slice(0,10),amount:Number(x.amount)||0,categoryId:x.category_id||'',description:x.description||'',notes:x.notes||''}));
+  state.maintenance=(maintenance||[]).map(x=>({id:x.id,laundryId:x.laundry_id,machineId:x.machine_id||'',date:String(x.maintenance_date).slice(0,10),problem:x.problem||'',technician:x.technician_company||'',cost:Number(x.cost)||0,repairDate:x.repair_date?String(x.repair_date).slice(0,10):'',status:x.status||'Pendente',observations:x.observations||''}));
+  state.contacts=(contacts||[]).map(x=>({id:x.id,laundryId:null,name:x.company_name||'',category:x.category||'',phone:x.phone||'',whatsapp:x.whatsapp||'',email:x.email||'',description:x.description||'',notes:x.notes||'',partner:!!x.is_partner,benefit:x.benefit||''}));
+  remoteReady=true;
+  return state;
 }
-let state=load()||seedState(); state.categories=(state.categories||[]).map(c=>({...c,laundryId:c.laundryId||state.laundries?.[0]?.id||null})); state.contacts=(state.contacts||[]).map(c=>({...c,laundryId:null})); state.usageRecords=state.usageRecords||[]; if(!state.usageRecords.length&&state.machines?.length){state.machines.forEach(m=>{const total=Number(m.usage||0);if(total>0)state.usageRecords.push({id:uid(),laundryId:m.laundryId,machineId:m.id,date:today(),count:total});});} state.machines=(state.machines||[]).map(m=>({...m,usage:state.usageRecords.filter(r=>r.machineId===m.id).reduce((a,r)=>a+Number(r.count||0),0)})); save();
+
+async function upsertAll(table,rows){if(!rows.length)return;const {error}=await supabaseClient.from(table).upsert(rows,{onConflict:'id'});if(error)throw error}
+async function syncRemoteState(){
+  if(!remoteReady||remoteSyncing)return;
+  remoteSyncing=true;
+  try{
+    const {data:{user}}=await supabaseClient.auth.getUser(); if(!user) return;
+    const admin=user.email?.toLowerCase()===ADMIN_EMAIL.toLowerCase() || isAdmin();
+    const visibleLaundryIds=admin?state.laundries.map(l=>l.id):state.laundries.filter(l=>l.id===currentUser()?.laundryId).map(l=>l.id);
+    await upsertAll('laundries',state.laundries.map(l=>({id:l.id,name:l.name,created_at:l.created_at||new Date().toISOString()})));
+    await upsertAll('profiles',state.users.map(u=>({id:u.id,email:u.email,full_name:u.name,role:u.role,laundry_id:u.laundryId})));
+    const subscriptionRows=state.laundries.map(l=>({id:uid(),laundry_id:l.id,plan_name:l.monthlyPrice?String(l.monthlyPrice):null,starts_at:l.activatedAt||null,expires_at:l.expiresAt||null,days_paid:Number(l.paidDays)||0,active:l.status==='active',notes:null,updated_at:new Date().toISOString()})); if(subscriptionRows.length){const {error:subErr}=await supabaseClient.from('subscriptions').upsert(subscriptionRows,{onConflict:'laundry_id'});if(subErr)throw subErr;}
+    const scope=id=>admin||visibleLaundryIds.includes(id);
+    await upsertAll('machines',state.machines.filter(x=>scope(x.laundryId)).map(x=>({id:x.id,laundry_id:x.laundryId,name:`Máquina ${x.number}`,type:x.type,number:String(x.number),active:x.status!=='Desligada',status:x.status||'Disponível',created_at:x.created_at||new Date().toISOString(),updated_at:new Date().toISOString()})));
+    await upsertAll('revenue',state.revenue.filter(x=>scope(x.laundryId)).map(x=>({id:x.id,laundry_id:x.laundryId,revenue_date:x.date,amount:Number(x.amount)||0,notes:x.note||null,updated_at:new Date().toISOString()})));
+    await upsertAll('machine_usage',state.usageRecords.filter(x=>scope(x.laundryId)).map(x=>({id:x.id,laundry_id:x.laundryId,revenue_id:x.revenueId||null,machine_id:x.machineId,usage_date:x.date,usage_count:Number(x.count)||0,updated_at:new Date().toISOString()})));
+    await upsertAll('expense_categories',state.categories.filter(x=>scope(x.laundryId)).map(x=>({id:x.id,laundry_id:x.laundryId,name:x.name})));
+    await upsertAll('expenses',state.expenses.filter(x=>scope(x.laundryId)).map(x=>({id:x.id,laundry_id:x.laundryId,category_id:x.categoryId||null,expense_date:x.date,amount:Number(x.amount)||0,description:x.description||null,notes:x.notes||null,updated_at:new Date().toISOString()})));
+    await upsertAll('maintenance',state.maintenance.filter(x=>scope(x.laundryId)).map(x=>({id:x.id,laundry_id:x.laundryId,machine_id:x.machineId||null,maintenance_date:x.date,problem:x.problem||null,technician_company:x.technician||null,cost:Number(x.cost)||0,repair_date:x.repairDate||null,status:x.status||null,observations:x.observations||null,updated_at:new Date().toISOString()})));
+    if(admin) await upsertAll('contacts',state.contacts.map(x=>({id:x.id,company_name:x.name,category:x.category||null,phone:x.phone||null,whatsapp:x.whatsapp||null,email:x.email||null,description:x.description||null,notes:x.notes||null,is_partner:!!x.partner,benefit:x.benefit||null,active:true,updated_at:new Date().toISOString()})));
+  }catch(err){console.error('Supabase sync:',err);toast('Não foi possível guardar online. Verifica a ligação.');}
+  finally{remoteSyncing=false;if(remoteSyncQueued){remoteSyncQueued=false;syncRemoteState();}}
+}
+function save(){if(!remoteReady)return;clearTimeout(remoteSyncTimer);remoteSyncQueued=true;remoteSyncTimer=setTimeout(()=>{remoteSyncQueued=false;syncRemoteState()},250)}
+
+async function loginWithSupabase(){
+  applyAccountExpirations();
+  const btn=document.getElementById('loginBtn');btn.disabled=true;
+  const email=document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pass=document.getElementById('loginPassword').value;
+  const {data,error}=await supabaseClient.auth.signInWithPassword({email,password:pass});
+  if(error||!data?.user){document.getElementById('loginError').classList.remove('hidden');btn.disabled=false;return;}
+  document.getElementById('loginError').classList.add('hidden');
+  session={userId:data.user.id};
+  localStorage.setItem(SESSION_KEY,JSON.stringify(session));
+  try{await loadRemoteState();
+    if(email===ADMIN_EMAIL){const {data:prof}=await supabaseClient.from('profiles').select('role').eq('id',data.user.id).maybeSingle();if(prof?.role!=='admin'){await supabaseClient.from('profiles').update({role:'admin'}).eq('id',data.user.id);const adminProfile=state.users.find(u=>u.id===data.user.id); if(adminProfile) adminProfile.role='admin';}}
+    await loadRemoteState();
+  }catch(err){console.error(err);await supabaseClient.auth.signOut();session=null;document.getElementById('loginError').classList.remove('hidden');toast('Não foi possível carregar os dados online.');btn.disabled=false;return;}
+  const u=currentUser();
+  if(!u || (u.role!=='admin'&&u.status!=='active')){await supabaseClient.auth.signOut();session=null;document.getElementById('loginError').classList.remove('hidden');btn.disabled=false;return;}
+  impersonating=false;selectedLaundryId=u.role==='admin'?(state.laundries[0]?.id||null):u.laundryId;document.getElementById('loginPassword').value='';btn.disabled=false;showApp();
+}
+
+function currentUser(){return state.users.find(u=>u.id===session?.userId)||null}
+function isAdmin(){const u=currentUser();return !!u&&(u.role==='admin'||u.email?.toLowerCase()===ADMIN_EMAIL.toLowerCase())}
+function currentLaundry(){return state.laundries.find(l=>l.id===selectedLaundryId)||null}
+function activeData(arr){return arr.filter(x=>x.laundryId===selectedLaundryId)}
+
 let session=null; let selectedLaundryId=null; let impersonating=false;
 
 function currentUser(){return state.users.find(u=>u.id===session?.userId)||null}
@@ -237,7 +317,7 @@ function activeData(arr){return arr.filter(x=>x.laundryId===selectedLaundryId)}
 function showApp(){document.getElementById('loginScreen').classList.add('hidden');document.getElementById('app').classList.remove('hidden');updateSessionUI();renderAll()}
 function showLogin(){document.getElementById('app').classList.add('hidden');document.getElementById('loginScreen').classList.remove('hidden')}
 function login(){document.getElementById('loginBtn').disabled=true; (async()=>{const email=document.getElementById('loginEmail').value.trim().toLowerCase();const pass=document.getElementById('loginPassword').value;const hash=await sha256(pass);const u=state.users.find(x=>x.email.toLowerCase()===email&&x.passwordHash===hash&&x.status==='active');if(!u){document.getElementById('loginError').classList.remove('hidden');document.getElementById('loginBtn').disabled=false;return}document.getElementById('loginError').classList.add('hidden');session={userId:u.id};localStorage.setItem(SESSION_KEY,JSON.stringify(session));impersonating=false;selectedLaundryId=u.role==='admin'?(state.laundries[0]?.id||null):u.laundryId;document.getElementById('loginPassword').value='';document.getElementById('loginBtn').disabled=false;showApp()})()}
-function logout(){session=null;selectedLaundryId=null;impersonating=false;localStorage.removeItem(SESSION_KEY);showLogin()}
+async function logout(){await supabaseClient.auth.signOut();session=null;selectedLaundryId=null;impersonating=false;localStorage.removeItem(SESSION_KEY);showLogin()}
 function updateSessionUI(){const u=currentUser();if(!u)return;document.getElementById('profileName').textContent=u.name;document.getElementById('profileRole').textContent=u.role==='admin'?'Administrador':'Cliente';document.getElementById('avatar').textContent=(u.name||'A').slice(0,1).toUpperCase();document.getElementById('settingsEmail').textContent=u.email;document.getElementById('settingsRole').textContent=u.role==='admin'?'Administrador':'Cliente';const banner=document.getElementById('impersonationBanner'); if(isAdmin()&&impersonating){banner.classList.remove('hidden');banner.textContent='A visualizar a lavandaria como administrador: '+(currentLaundry()?.name||'');}else banner.classList.add('hidden');document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()));}
 function closeMobileMenu(){const side=document.querySelector('.side');const back=document.getElementById('mobileNavBackdrop');if(side)side.classList.remove('mobile-open');if(back)back.classList.add('hidden')}
 function toggleMobileMenu(){const side=document.querySelector('.side');const back=document.getElementById('mobileNavBackdrop');if(!side||!back)return;const open=side.classList.toggle('mobile-open');back.classList.toggle('hidden',!open)}
@@ -278,7 +358,7 @@ function renderContacts(){
    const waDigits=String(wa).replace(/\D/g,'');
    const waHref=waDigits?(waDigits.startsWith('351')?'https://wa.me/'+waDigits:'https://wa.me/351'+waDigits):'';
    return `<tr>
-     <td><strong>${r.partner?'⭐ ':''}${escapeHtml(r.name)}</strong></td>
+     <td><strong>${r.partner?'⭐ ':''}${escapeHtml(r.name)}</strong>${(r.description||r.notes)?`<div class="small-note" style="margin-top:6px;line-height:1.45">${escapeHtml(r.description||r.notes)}</div>`:''}</td>
      <td>${escapeHtml(r.category)}</td>
      <td>${r.partner?`<span class="badge b-active">${escapeHtml(r.benefit||'Benefício disponível')}</span>`:'<span class="subtle">Sem benefício</span>'}</td>
      <td><div class="actions">${waHref?`<a class="btn btn-soft" href="${waHref}" target="_blank" rel="noopener">WhatsApp</a>`:''}${r.phone?`<span class="subtle">${escapeHtml(r.phone)}</span>`:''}</div></td>
@@ -444,13 +524,13 @@ function openContactModal(id){
    <div><label>Email</label><input class="input" id="cEmail" type="email" value="${escapeHtml(r?.email||'')}"></div>
    <div><label>Parceiro com benefício?</label><select class="select" id="cPartner"><option value="no">Não</option><option value="yes">Sim</option></select></div>
    <div><label>Benefício</label><input class="input" id="cBenefit" placeholder="Ex.: 2% de desconto" value="${escapeHtml(r?.benefit||'')}"><div class="small-note">Pode ser desconto, entrega grátis, preço especial, etc.</div></div>
-   <div class="full"><label>Notas</label><textarea class="textarea" id="cNotes">${escapeHtml(r?.notes||'')}</textarea></div>
+   <div class="full"><label>Informação para o cliente</label><textarea class="textarea" id="cDescription" placeholder="Ex.: Trabalha principalmente com máquinas Girbau. Confirme a marca do equipamento antes de solicitar assistência.">${escapeHtml(r?.description||r?.notes||'')}</textarea><div class="small-note">Esta informação aparece na ficha do contacto para todas as lavandarias.</div></div>
    <div class="full actions"><button class="btn btn-primary">Guardar</button><button type="button" class="btn btn-soft" onclick="closeModal()">Cancelar</button></div>
  </form>`);
  const partnerSel=document.getElementById('cPartner'); partnerSel.value=r?.partner?'yes':'no';
  document.getElementById('contactForm').onsubmit=e=>{
    e.preventDefault();
-   const item={id:r?.id||uid(),laundryId:null,name:document.getElementById('cName').value.trim(),category:document.getElementById('cCategory').value.trim(),phone:document.getElementById('cPhone').value.trim(),whatsapp:document.getElementById('cWa').value.trim(),email:document.getElementById('cEmail').value.trim(),partner:document.getElementById('cPartner').value==='yes',benefit:document.getElementById('cBenefit').value.trim(),notes:document.getElementById('cNotes').value.trim()};
+   const item={id:r?.id||uid(),laundryId:null,name:document.getElementById('cName').value.trim(),category:document.getElementById('cCategory').value.trim(),phone:document.getElementById('cPhone').value.trim(),whatsapp:document.getElementById('cWa').value.trim(),email:document.getElementById('cEmail').value.trim(),partner:document.getElementById('cPartner').value==='yes',benefit:document.getElementById('cBenefit').value.trim(),description:document.getElementById('cDescription').value.trim(),notes:r?.notes||''};
    if(r)Object.assign(r,item);else state.contacts.push(item);
    save();closeModal();renderAll();toast(item.partner?'Parceiro guardado':'Contacto guardado');
  };
@@ -528,11 +608,74 @@ function renderAccounts(){if(!isAdmin())return;applyAccountExpirations();const t
 function openAccountModal(id){if(!isAdmin())return;const u=id?state.users.find(x=>x.id===id&&x.role==='customer'):null;const l=u?state.laundries.find(x=>x.id===u.laundryId):null;modal(u?'Gerir conta / lavandaria':'Nova conta / lavandaria',`<form id="accountForm" class="form"><div><label>Nome do responsável</label><input class="input" id="aName" value="${escapeHtml(u?.name||'')}" required></div><div><label>Email de acesso</label><input class="input" id="aEmail" type="email" value="${escapeHtml(u?.email||'')}" required></div><div class="full"><label>Nome da lavandaria</label><input class="input" id="aLaundryName" value="${escapeHtml(l?.name||'')}" required></div><div><label>Estado</label><select class="select" id="aStatus"><option value="active">Ativa</option><option value="suspended">Suspensa</option></select></div><div><label>Mensalidade (€)</label><input class="input" id="aPrice" type="number" min="0" step="0.01" value="${l?.monthlyPrice??3}" required></div>${u?`<div><label>Adicionar dias pagos</label><input class="input" id="aDays" type="number" min="0" step="1" value="0"><div class="small-note">30 = mais um mês; 90 = mais três meses.</div></div><div><label>Validade atual</label><input class="input" value="${formatExpiryDate(l?.expiresAt)}" disabled></div>`:`<div><label>Dias de serviço pagos</label><input class="input" id="aDays" type="number" min="1" step="1" value="30" required><div class="small-note">30 = um mês; 90 = três meses.</div></div><div><label>Início do serviço</label><input class="input" id="aStart" type="date" value="${today()}" required></div>`}${u?'':`<div class="full"><label>Palavra-passe inicial</label><input class="input" id="aPassword" type="password" minlength="6" required></div>`}<div class="full actions"><button class="btn btn-primary">${u?'Guardar alterações':'Criar conta'}</button><button type="button" class="btn btn-soft" onclick="closeModal()">Cancelar</button></div>${u?`<div class="full" style="margin-top:4px;padding-top:14px;border-top:1px solid var(--line)"><div class="small-note" style="margin-bottom:9px">Gestão rápida desta lavandaria</div><div class="actions"><button type="button" class="btn btn-soft" onclick="manageAccountSection('${u.id}','despesas')">💸 Despesas</button><button type="button" class="btn btn-soft" onclick="manageAccountSection('${u.id}','maquinas')">🧺 Máquinas</button><button type="button" class="btn btn-soft" onclick="manageAccountSection('${u.id}','manutencao')">🔧 Manutenção</button><button type="button" class="btn btn-soft" onclick="manageAccountSection('${u.id}','contactos')">📞 Contactos</button><button type="button" class="btn btn-soft" onclick="manageAccountSection('${u.id}','faturacao')">💰 Faturação</button><button type="button" class="btn btn-soft" onclick="manageAccountSection('${u.id}','relatorios')">📊 Relatórios</button></div></div>`:''}</form>`);if(l)document.getElementById('aStatus').value=l.status;document.getElementById('accountForm').onsubmit=async e=>{e.preventDefault();const name=document.getElementById('aName').value.trim();const email=document.getElementById('aEmail').value.trim().toLowerCase();const lname=document.getElementById('aLaundryName').value.trim();const status=document.getElementById('aStatus').value;const price=Math.max(0,Number(document.getElementById('aPrice').value)||0);if(!name||!email||!lname){toast('Preenche os campos obrigatórios.');return}if(state.users.some(x=>x.email.toLowerCase()===email&&x.id!==id)){toast('Esse email já está a ser utilizado.');return}if(u){u.name=name;u.email=email;const days=Math.max(0,Math.floor(Number(document.getElementById('aDays').value)||0));let current=state.laundries.find(x=>x.id===u.laundryId);if(!current){current={id:uid(),name:lname,customerId:u.id,status,monthlyPrice:price,paidDays:0,expiresAt:'',activatedAt:''};state.laundries.push(current);u.laundryId=current.id}current.name=lname;current.monthlyPrice=price;current.customerId=u.id;current.status=status;if(days>0)addServiceDays(current,days);else if(status==='active'&&current.expiresAt&&accountExpired(current)){current.status='suspended';u.status='suspended'}else u.status=status;toast(days>0?'Conta atualizada e dias adicionados':'Conta atualizada')}else{const password=document.getElementById('aPassword').value;const days=Math.floor(Number(document.getElementById('aDays').value)||0);const startDate=document.getElementById('aStart').value||today();if(password.length<6){toast('A password deve ter pelo menos 6 caracteres.');return}if(days<1){toast('Indica pelo menos 1 dia de serviço.');return}const base=new Date(startDate+'T00:00:00');base.setDate(base.getDate()+days);const expiresAt=`${base.getFullYear()}-${String(base.getMonth()+1).padStart(2,'0')}-${String(base.getDate()).padStart(2,'0')}`;const lid=uid(),uidUser=uid();state.laundries.push({id:lid,name:lname,customerId:uidUser,status,monthlyPrice:price,paidDays:days,expiresAt,activatedAt:startDate});state.users.push({id:uidUser,role:'customer',name,email,passwordHash:await sha256(password),status,laundryId:lid});['Contabilidade','Água','Eletricidade','Renda','Produtos / Líquidos','Manutenção','Seguro','Internet'].forEach(name=>state.categories.push({id:uid(),laundryId:lid,name}));toast('Conta e lavandaria criadas')}save();closeModal();renderAll()}}
 function manageAccountSection(userId,section){if(!isAdmin())return;const u=state.users.find(x=>x.id===userId);if(!u?.laundryId){toast('Esta conta ainda não tem lavandaria.');return}selectedLaundryId=u.laundryId;impersonating=false;closeModal();go(section);toast('Lavandaria selecionada para gestão')}
 function delRevenue(id){if(!confirm('Apagar este registo de faturação e as utilizações ligadas a esse dia?'))return;state.revenue=state.revenue.filter(x=>x.id!==id);state.usageRecords=state.usageRecords.filter(x=>x.revenueId!==id);state.machines.forEach(m=>syncMachineUsage(m.id));save();renderAll();toast('Registo apagado')}
-function login(){applyAccountExpirations();document.getElementById('loginBtn').disabled=true;(async()=>{const email=document.getElementById('loginEmail').value.trim().toLowerCase();const pass=document.getElementById('loginPassword').value;const hash=await sha256(pass);const u=state.users.find(x=>{const l=x.laundryId?state.laundries.find(y=>y.id===x.laundryId):null;return x.email.toLowerCase()===email&&x.passwordHash===hash&&x.status==='active'&&(!l||(l.status==='active'&&!accountExpired(l)));});if(!u){document.getElementById('loginError').classList.remove('hidden');document.getElementById('loginBtn').disabled=false;return}document.getElementById('loginError').classList.add('hidden');session={userId:u.id};localStorage.setItem(SESSION_KEY,JSON.stringify(session));impersonating=false;selectedLaundryId=u.role==='admin'?(state.laundries[0]?.id||null):u.laundryId;document.getElementById('loginPassword').value='';document.getElementById('loginBtn').disabled=false;showApp()})()}
-document.getElementById('mobileMenuBtn').onclick=toggleMobileMenu;document.getElementById('mobileNavBackdrop').onclick=closeMobileMenu;setTheme();applyAccountExpirations();
-try{session=JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch{session=null}
-if(session?.userId&&currentUserAccessActive()){selectedLaundryId=isAdmin()?(state.laundries[0]?.id||null):currentUser().laundryId;showApp()}else{session=null;localStorage.removeItem(SESSION_KEY);showLogin()}
+function login(){return loginWithSupabase()}
+document.getElementById('mobileMenuBtn').onclick=toggleMobileMenu;document.getElementById('mobileNavBackdrop').onclick=closeMobileMenu;setTheme();
+(async()=>{
+  const {data:{session:authSession}}=await supabaseClient.auth.getSession();
+  if(authSession?.user){
+    session={userId:authSession.user.id};
+    try{await loadRemoteState();if(currentUser()){selectedLaundryId=isAdmin()?(state.laundries[0]?.id||null):currentUser().laundryId;showApp();}else showLogin();}
+    catch(e){console.error(e);showLogin();}
+  }else{session=null;showLogin();}
+})();
 setInterval(()=>{applyAccountExpirations();if(session?.userId&&!isAdmin()&&!currentUserAccessActive()){logout();toast('A sua subscrição terminou. Contacte o administrador para renovar.')}else if(document.getElementById('app')&&!document.getElementById('app').classList.contains('hidden')){renderAccounts();renderDashboardAccountStatus()}},60000);
+
+
+/* V13: gestão online de contas via Supabase Auth */
+async function createSupabaseCustomer(email,password,name){
+  const {data:{session:adminSession}}=await supabaseClient.auth.getSession();
+  const {data,error}=await supabaseClient.auth.signUp({email,password,options:{data:{full_name:name}}});
+  if(error) throw error;
+  if(adminSession?.access_token&&adminSession?.refresh_token) await supabaseClient.auth.setSession(adminSession);
+  return data.user;
+}
+
+async function openCustomerPasswordModal(id){
+  if(!isAdmin())return;const u=state.users.find(x=>x.id===id);if(!u)return;
+  modal('Alterar palavra-passe',`<form id="pwdForm" class="form"><div class="full"><label>Cliente</label><input class="input" value="${escapeHtml(u.email)}" disabled></div><div class="full"><label>Nova palavra-passe</label><input class="input" id="newPwd" type="password" minlength="6" required></div><div class="full small-note">Por segurança, a alteração da palavra-passe de outro utilizador será feita através do fluxo de recuperação do Supabase. Nesta versão o administrador pode enviar o pedido de recuperação.</div><div class="full actions"><button class="btn btn-primary">Enviar recuperação</button><button type="button" class="btn btn-soft" onclick="closeModal()">Cancelar</button></div></form>`);
+  document.getElementById('pwdForm').onsubmit=async e=>{e.preventDefault();const {error}=await supabaseClient.auth.resetPasswordForEmail(u.email,{redirectTo:location.origin+location.pathname});if(error){toast('Não foi possível enviar a recuperação.');return}closeModal();toast('Email de recuperação enviado ao cliente.')};
+}
+
+
+
+async function reloadOnlineData(){try{await loadRemoteState();renderAll();toast('Dados online atualizados.')}catch(e){console.error(e);toast('Não foi possível atualizar os dados online.')}}
+
+async function openAccountModal(id){
+  if(!isAdmin())return;
+  const u=id?state.users.find(x=>x.id===id&&x.role==='customer'):null;
+  const l=u?state.laundries.find(x=>x.id===u.laundryId):null;
+  modal(u?'Gerir conta / lavandaria':'Nova conta / lavandaria',`<form id="accountForm" class="form"><div><label>Nome do responsável</label><input class="input" id="aName" value="${escapeHtml(u?.name||'')}" required></div><div><label>Email de acesso</label><input class="input" id="aEmail" type="email" value="${escapeHtml(u?.email||'')}" required></div><div class="full"><label>Nome da lavandaria</label><input class="input" id="aLaundryName" value="${escapeHtml(l?.name||'')}" required></div><div><label>Estado</label><select class="select" id="aStatus"><option value="active">Ativa</option><option value="suspended">Suspensa</option></select></div><div><label>Mensalidade (€)</label><input class="input" id="aPrice" type="number" min="0" step="0.01" value="${l?.monthlyPrice??0}" required></div>${u?`<div><label>Adicionar dias pagos</label><input class="input" id="aDays" type="number" min="0" step="1" value="0"><div class="small-note">30 = mais um mês; 90 = mais três meses.</div></div><div><label>Validade atual</label><input class="input" value="${formatExpiryDate(l?.expiresAt)}" disabled></div>`:`<div><label>Dias de serviço pagos</label><input class="input" id="aDays" type="number" min="1" step="1" value="30" required><div class="small-note">7 = período de teste; 30 = um mês; 90 = três meses.</div></div><div><label>Início do serviço</label><input class="input" id="aStart" type="date" value="${today()}" required></div>`}${u?'':`<div class="full"><label>Palavra-passe inicial</label><input class="input" id="aPassword" type="password" minlength="6" required><div class="small-note">A conta será criada no Supabase e a palavra-passe não fica guardada no código.</div></div>`}<div class="full actions"><button class="btn btn-primary">${u?'Guardar alterações':'Criar conta'}</button><button type="button" class="btn btn-soft" onclick="closeModal()">Cancelar</button></div>${u?`<div class="full" style="margin-top:4px;padding-top:14px;border-top:1px solid var(--line)"><div class="small-note" style="margin-bottom:9px">Gestão rápida desta lavandaria</div><div class="actions"><button type="button" class="btn btn-soft" onclick="manageAccountSection('${u.id}','despesas')">💸 Despesas</button><button type="button" class="btn btn-soft" onclick="manageAccountSection('${u.id}','maquinas')">🧺 Máquinas</button><button type="button" class="btn btn-soft" onclick="manageAccountSection('${u.id}','manutencao')">🔧 Manutenção</button><button type="button" class="btn btn-soft" onclick="manageAccountSection('${u.id}','contactos')">📞 Contactos</button><button type="button" class="btn btn-soft" onclick="manageAccountSection('${u.id}','faturacao')">💰 Faturação</button><button type="button" class="btn btn-soft" onclick="manageAccountSection('${u.id}','relatorios')">📊 Relatórios</button></div></div>`:''}</form>`);
+  if(l)document.getElementById('aStatus').value=l.status;
+  document.getElementById('accountForm').onsubmit=async e=>{
+    e.preventDefault();
+    const name=document.getElementById('aName').value.trim(),email=document.getElementById('aEmail').value.trim().toLowerCase(),lname=document.getElementById('aLaundryName').value.trim(),status=document.getElementById('aStatus').value,price=Math.max(0,Number(document.getElementById('aPrice').value)||0);
+    if(!name||!email||!lname){toast('Preenche os campos obrigatórios.');return}
+    if(state.users.some(x=>x.email.toLowerCase()===email&&x.id!==id)){toast('Esse email já está a ser utilizado.');return}
+    if(u){
+      u.name=name;u.email=email;
+      const days=Math.max(0,Math.floor(Number(document.getElementById('aDays').value)||0));
+      let current=state.laundries.find(x=>x.id===u.laundryId);
+      if(!current){current={id:uid(),name:lname,customerId:u.id,status,monthlyPrice:price,paidDays:0,expiresAt:'',activatedAt:''};state.laundries.push(current);u.laundryId=current.id}
+      current.name=lname;current.monthlyPrice=price;current.customerId=u.id;current.status=status;
+      if(days>0)addServiceDays(current,days);else if(status==='active'&&current.expiresAt&&accountExpired(current)){current.status='suspended';u.status='suspended'}else u.status=status;
+      save();await syncRemoteState();closeModal();renderAll();toast(days>0?'Conta atualizada e dias adicionados':'Conta atualizada');return;
+    }
+    const password=document.getElementById('aPassword').value,days=Math.floor(Number(document.getElementById('aDays').value)||0),startDate=document.getElementById('aStart').value||today();
+    if(password.length<6){toast('A password deve ter pelo menos 6 caracteres.');return}
+    if(days<1){toast('Indica pelo menos 1 dia de serviço.');return}
+    try{
+      const newAuthUser=await createSupabaseCustomer(email,password,name);
+      if(!newAuthUser?.id){toast('O Supabase não devolveu o utilizador.');return}
+      const base=new Date(startDate+'T00:00:00');base.setDate(base.getDate()+days);const expiresAt=base.toISOString().slice(0,10);const lid=uid();
+      const {error:lErr}=await supabaseClient.from('laundries').insert({id:lid,name:lname});if(lErr)throw lErr;
+      const {error:pErr}=await supabaseClient.from('profiles').upsert({id:newAuthUser.id,email,full_name:name,role:'customer',laundry_id:lid});if(pErr)throw pErr;
+      const {error:sErr}=await supabaseClient.from('subscriptions').upsert({id:uid(),laundry_id:lid,plan_name:String(price),starts_at:startDate,expires_at:expiresAt,days_paid:days,active:status==='active'});if(sErr)throw sErr;
+      ['Contabilidade','Água','Eletricidade','Renda','Produtos / Líquidos','Manutenção','Seguro','Internet'].forEach(async n=>{await supabaseClient.from('expense_categories').insert({id:uid(),laundry_id:lid,name:n})});
+      await loadRemoteState();selectedLaundryId=lid;closeModal();renderAll();toast('Conta criada online com sucesso.');
+    }catch(err){console.error(err);toast(err?.message?.includes('already registered')?'Esse email já está registado no Supabase.':'Não foi possível criar a conta online.');}
+  };
+}
+
 </script>
 </body>
 </html>
