@@ -81,7 +81,7 @@ body{margin:0;background:var(--bg);color:var(--text);font:14px Inter,system-ui,-
     <input id="loginPassword" class="input" type="password" autocomplete="current-password" placeholder="Palavra-passe">
     <button id="loginBtn" class="btn btn-primary">Entrar</button>
     <div id="loginError" class="login-note hidden" style="color:#c74761">Email ou palavra-passe incorretos.</div><div class="login-help"><p>Precisa de ajuda com a sua conta?</p><a class="wa-btn" href="https://wa.me/351934529097?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20Gestor%20de%20Lavandarias." target="_blank" rel="noopener">💬 Falar comigo no WhatsApp</a></div>
-    <div class="login-note">Versão V1 funcional local. Os dados ficam guardados neste navegador até ligarmos a uma base de dados online.</div>
+    <div class="login-note">Versão V13. Os dados desta versão ficam guardados online no Supabase.</div>
   </div>
 </div>
 
@@ -289,18 +289,67 @@ async function loginWithSupabase(){
   const btn=document.getElementById('loginBtn');btn.disabled=true;
   const email=document.getElementById('loginEmail').value.trim().toLowerCase();
   const pass=document.getElementById('loginPassword').value;
+  const loginError=document.getElementById('loginError');
+  loginError.classList.add('hidden');
+  if(!email||!pass){loginError.textContent='Indica o email e a palavra-passe.';loginError.classList.remove('hidden');btn.disabled=false;return;}
+
   const {data,error}=await supabaseClient.auth.signInWithPassword({email,password:pass});
-  if(error||!data?.user){document.getElementById('loginError').classList.remove('hidden');btn.disabled=false;return;}
-  document.getElementById('loginError').classList.add('hidden');
+  if(error||!data?.user){
+    console.error('Supabase login:',error);
+    let msg='Email ou palavra-passe incorretos.';
+    if(error?.message?.toLowerCase().includes('email not confirmed')) msg='O email desta conta ainda não foi confirmado no Supabase.';
+    else if(error?.message) msg='Login: '+error.message;
+    loginError.textContent=msg;
+    loginError.classList.remove('hidden');
+    btn.disabled=false;
+    return;
+  }
+
   session={userId:data.user.id};
-  localStorage.setItem(SESSION_KEY,JSON.stringify(session));
-  try{await loadRemoteState();
-    if(email===ADMIN_EMAIL){const {data:prof}=await supabaseClient.from('profiles').select('role').eq('id',data.user.id).maybeSingle();if(prof?.role!=='admin'){await supabaseClient.from('profiles').update({role:'admin'}).eq('id',data.user.id);const adminProfile=state.users.find(u=>u.id===data.user.id); if(adminProfile) adminProfile.role='admin';}}
+  try{
     await loadRemoteState();
-  }catch(err){console.error(err);await supabaseClient.auth.signOut();session=null;document.getElementById('loginError').classList.remove('hidden');toast('Não foi possível carregar os dados online.');btn.disabled=false;return;}
+    // O administrador é identificado pela conta criada no Supabase e pelo perfil.
+    if(email===ADMIN_EMAIL){
+      const {data:prof,error:profErr}=await supabaseClient.from('profiles').select('role,is_admin').eq('id',data.user.id).maybeSingle();
+      if(profErr) throw profErr;
+      if(prof?.role!=='admin' || prof?.is_admin!==true){
+        const {error:updateErr}=await supabaseClient.from('profiles').update({role:'admin',is_admin:true}).eq('id',data.user.id);
+        if(updateErr) throw updateErr;
+        await loadRemoteState();
+      }
+    }
+  }catch(err){
+    console.error('Supabase data load:',err);
+    await supabaseClient.auth.signOut();
+    session=null;
+    loginError.textContent='O login foi aceite, mas houve um erro ao carregar os dados. Abra a consola para diagnóstico ou envie-me esta mensagem: '+(err?.message||'erro desconhecido');
+    loginError.classList.remove('hidden');
+    btn.disabled=false;
+    return;
+  }
+
   const u=currentUser();
-  if(!u || (u.role!=='admin'&&u.status!=='active')){await supabaseClient.auth.signOut();session=null;document.getElementById('loginError').classList.remove('hidden');btn.disabled=false;return;}
-  impersonating=false;selectedLaundryId=u.role==='admin'?(state.laundries[0]?.id||null):u.laundryId;document.getElementById('loginPassword').value='';btn.disabled=false;showApp();
+  if(!u){
+    await supabaseClient.auth.signOut();
+    session=null;
+    loginError.textContent='A conta entrou no Supabase, mas ainda não tem perfil na aplicação.';
+    loginError.classList.remove('hidden');
+    btn.disabled=false;
+    return;
+  }
+  if(u.role!=='admin'&&u.status!=='active'){
+    await supabaseClient.auth.signOut();
+    session=null;
+    loginError.textContent='A conta está suspensa. Contacta o administrador.';
+    loginError.classList.remove('hidden');
+    btn.disabled=false;
+    return;
+  }
+  impersonating=false;
+  selectedLaundryId=u.role==='admin'?(state.laundries[0]?.id||null):u.laundryId;
+  document.getElementById('loginPassword').value='';
+  btn.disabled=false;
+  showApp();
 }
 
 function currentUser(){return state.users.find(u=>u.id===session?.userId)||null}
